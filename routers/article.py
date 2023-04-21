@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, Depends, HTTPException
+from fastapi import APIRouter, status, Depends, HTTPException, Response
 from typing import List
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -97,7 +97,24 @@ def get_articles(db: Session = Depends(database.get_db)):
         onclause=models.Article.id == subq.c.article_id
     ).all()
 
+    # filter
+    # tranding views
+    # hot likes
+    # faculty, clubs id
+    # events false
+
     if article == []:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Articles empty")
 
     return article
+
+
+@router.post("/like")
+def increase_article_like(article_id: int, db: Session = Depends(database.get_db)):
+    article = db.query(models.Article).filter(models.Article.id == article_id).update({'likes': models.Article.likes + 1})
+    db.commit()
+
+    if article:
+        return Response(status_code=status.HTTP_202_ACCEPTED)
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Article with id {article_id} not found")
