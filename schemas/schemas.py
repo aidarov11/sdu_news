@@ -83,7 +83,7 @@ class ArticleOut(BaseModel):
     category_name: str
     user_first_name: str
     user_last_name: str
-    comments_count: int
+    comments_count: Optional[int] = 0
     created_at: datetime
 
     class Config:

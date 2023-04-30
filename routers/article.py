@@ -2,6 +2,7 @@ from fastapi import APIRouter, status, Depends, HTTPException, Response
 from typing import List
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.sql.functions import coalesce
 import database
 import models
 import schemas
@@ -39,7 +40,7 @@ def get_article_by_id(article_id: int, db: Session = Depends(database.get_db)):
         models.Category.name.label("category_name"),
         models.User.first_name.label("user_first_name"),
         models.User.last_name.label("user_last_name"),
-        subq.c.comments_count,
+        coalesce(subq.c.comments_count, 0),
         models.Article.created_at
     ).select_from(models.Article).join(
         models.Image,
@@ -52,7 +53,8 @@ def get_article_by_id(article_id: int, db: Session = Depends(database.get_db)):
         onclause=models.Article.user_id == models.User.id
     ).join(
         subq,
-        onclause=models.Article.id == subq.c.article_id
+        onclause=models.Article.id == subq.c.article_id,
+        isouter=True
     ).filter(
         models.Article.id == article_id
     ).first()
@@ -70,6 +72,7 @@ def get_articles(db: Session = Depends(database.get_db)):
         func.count(models.Comment.id).label("comments_count")
     ).group_by(models.Comment.article_id).subquery()
 
+
     article = db.query(
         models.Article.id,
         models.Article.title,
@@ -81,7 +84,7 @@ def get_articles(db: Session = Depends(database.get_db)):
         models.Category.name.label("category_name"),
         models.User.first_name.label("user_first_name"),
         models.User.last_name.label("user_last_name"),
-        subq.c.comments_count,
+        coalesce(subq.c.comments_count, 0),
         models.Article.created_at
     ).select_from(models.Article).join(
         models.Image,
@@ -94,14 +97,9 @@ def get_articles(db: Session = Depends(database.get_db)):
         onclause=models.Article.user_id == models.User.id
     ).join(
         subq,
-        onclause=models.Article.id == subq.c.article_id
+        onclause=models.Article.id == subq.c.article_id,
+        isouter=True
     ).all()
-
-    # filter
-    # tranding views
-    # hot likes
-    # faculty, clubs id
-    # events false
 
     if article == []:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Articles empty")
