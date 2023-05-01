@@ -11,12 +11,14 @@ router = APIRouter(
     tags=['Images']
 )
 
+path = "/Users/aidarov/PycharmProjects/sdu_news/images"
+
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.Image)
 async def upload_image(file: UploadFile = File(...), db: Session = Depends(database.get_db)):
     file.filename = str(file.filename).replace(" ", "_")
     contents = await file.read()
 
-    with open(f"/Users/aidarov/PycharmProjects/sdu_news/images/{file.filename}", "wb") as f:
+    with open(f"{path}/{file.filename}", "wb") as f:
         f.write(contents)
 
     image = models.Image(path=file.filename)
@@ -26,8 +28,6 @@ async def upload_image(file: UploadFile = File(...), db: Session = Depends(datab
 
     return image
 
-path = "/Users/aidarov/PycharmProjects/sdu_news/images"
-
 @router.get("/{filename}")
 def get_images(filename: str):
     file_path = os.path.join(path, filename)
@@ -36,6 +36,3 @@ def get_images(filename: str):
         return FileResponse(file_path)
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"File with {filename} name was not found")
-
-# @router.mount("/", StaticFiles(directory="images"), name="wallhaven-1krkkv.jpg")
-
